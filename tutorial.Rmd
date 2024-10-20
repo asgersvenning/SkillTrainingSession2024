@@ -1,12 +1,92 @@
 ---
-title: "Tutorial"
+title: "R: `mgcv` as a general framework for (most) Generalized Models"
 author: "Asger Svenning"
 date: "2024-10-20"
-output: html_document
+output:
+  rmdformats::downcute:
+    self_contained: true
+    thumbnails: true
+    lightbox: true
+    gallery: false
+    highlight: tango
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(c("ggplot2", "dplyr", "mgcv"))
+library(dplyr)
+library(ggplot2)
+library(mgcv)
 ```
 
+# Introduction
+
+Welcome to the `mgcv` skill training session! In this tutorial, we will explore how to use the R `mgcv` package as a unified framework for modeling various types of generalized models, including Generalized Linear Models (GLMs), Linear Mixed Models (LMMs), Generalized Linear Mixed Models (GLMMs), Generalized Additive Models (GAMs), and Generalized Additive Mixed Models (GAMMs).
+
+By the end of the session, you will have gained practical experience in:
+
+- Selecting the appropriate model type (GLM, LMM, GAM, GLMM, GAMM) and family (e.g., `ziP`, `betar`, `gaullss`).
+- Fitting and parameterizing models using the `mgcv` package.
+- Visualizing key diagnostics, including residual plots, QQ plots, and fitted values.
+- Optimizing model performance for larger datasets using `bam`.
+
+## Sections Overview
+
+This tutorial is divided into the following sections:
+
+1. **Introduction to Generalized Models and Smoothing Functions**  
+   We will start by discussing the range of models that can be fitted using `mgcv`, including GLMs, LMMs, GLMMs, GAMs, and GAMMs. You will also learn about the available families and smoothing functions in `mgcv`.
+
+2. **Fitting Generalized Linear Models (GLM)**  
+   In this section, we will fit basic GLMs to datasets using different families, such as Poisson for count data and binomial for binary data.
+
+3. **Fitting Linear Mixed Models (LMM) and Generalized Linear Mixed Models (GLMM)**  
+   This section covers fitting LMMs and GLMMs to handle grouped data and random effects.
+
+4. **Fitting Generalized Additive Models (GAM) and Generalized Additive Mixed Models (GAMM)**  
+   We will extend GLMs and GLMMs by incorporating smoothing terms for continuous predictors, resulting in GAMs and GAMMs.
+
+5. **Model Diagnostics and Visualization**  
+   You will learn how to visualize model diagnostics, including residuals, QQ plots, and fitted values, to assess the quality of the model fit.
+
+6. **Optimizing for Large Datasets Using `bam`**  
+   For large datasets, the `bam` function in `mgcv` provides computational efficiency. This section will focus on optimizing model fitting for larger datasets.
+
+---
+
+## 1. Introduction to Generalized Models and Smoothing Functions
+
+`mgcv` provides a unified framework for modeling a wide range of statistical models, including:
+
+- **Generalized Linear Models (GLMs)**: A generalization of linear regression, allowing for different types of response distributions (e.g., Poisson, binomial).
+- **Linear Mixed Models (LMMs)**: Extends linear models by incorporating random effects to account for grouped data.
+- **Generalized Linear Mixed Models (GLMMs)**: Extends GLMs by including random effects.
+- **Generalized Additive Models (GAMs)**: Extends GLMs by allowing nonlinear relationships through smoothing functions.
+- **Generalized Additive Mixed Models (GAMMs)**: Combines GAMs and GLMMs, allowing for both smoothing and random effects.
+
+Common families in `mgcv` include:
+
+- **Gaussian**: For continuous, normally distributed data.
+- **Poisson**: For count data.
+- **Binomial**: For binary or proportion data.
+- **Zero-inflated Poisson (`ziP`)**: For count data with excess zeros.
+- **Beta regression (`betar`)**: For data bounded between 0 and 1.
+- **Gaussian location-scale (`gaullss`)**: For modeling the mean and variance simultaneously.
+
+Smoothing functions available in `mgcv` include:
+
+- **Thin-plate splines (`s()`)**: Flexible smooths for most continuous predictors.
+- **Random effects smooths (`re()`)**: For random effects in grouped data.
+
+---
+
+## 2. Fitting Generalized Linear Models (GLM)
+
+GLMs can handle a wide range of response distributions. We can use `mgcv`'s `gam` function to fit GLMs by specifying the appropriate family.
+
+```{r}
+# Fit a GLM model using Poisson family for count data
+glm_model <- gam(Sepal.Width ~ Sepal.Length + Species, family = "quasipoisson", data = iris)
+
+# Summarize the GLM
+summary(glm_model)
+```

@@ -27,10 +27,10 @@ To follow along with the tutorial, you will need the following R packages:
 - `ggplot2`
 - `dplyr`
 
-You can install these packages using the following commands:
+You can install these packages using the following commands in RGui (with RStudio closed):
 
 ```r
-install.packages(c("mgcv", "ggplot2", "dplyr"))
+install.packages(c("mgcv", "ggplot2", "dplyr", "rmdformats", "xfun"))
 ```
 
 ### How to Use the Tutorial
