@@ -34,11 +34,15 @@ install.packages(c("mgcv", "ggplot2", "dplyr"))
 ```
 
 ### How to Use the Tutorial
-* Download/Clone this repository.
+
+* (optional) Create a fork of this repository.
+* Download or clone this repository (or the fork).
 * Open tutorial.Rmd in RStudio.
 
 Work through the tutorial, filling in the code where indicated and answering questions along the way.
 Run the code blocks in RStudio to see the outputs, predictions, and diagnostics visualized in real-time.
+
+(optional) If you forked the repository, you can push your changes to your fork to save your progress, and allow others - me included - to see your work.
 
 ### Contact
 For any issues, feel free to open an issue in this repository or contact me at asgersvenning@ecos.au.dk.
