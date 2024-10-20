@@ -15,7 +15,7 @@ The session is structured around hands-on exercises using three datasets from th
 
 - **data/**: Contains the datasets used in the session.
 - **tutorial.Rmd**: The RMarkdown tutorial that guides participants through the exercises.
-- **results/**: Folder for participants to save and upload their results after completing the exercises.
+- **results/**: Folder for where the results produced in the excercises are stored.
 
 ### Setup
 
