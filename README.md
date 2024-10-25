@@ -30,7 +30,7 @@ To follow along with the tutorial, you will need the following R packages:
 You can install these packages using the following commands in RGui (with RStudio closed):
 
 ```r
-install.packages(c("mgcv", "ggplot2", "dplyr", "rmdformats", "xfun"))
+install.packages(c("mgcv", "gratia", "tidyverse", "rmdformats", "xfun"))
 ```
 
 ### How to Use the Tutorial

@@ -4,19 +4,58 @@ author: "Asger Svenning"
 date: "2024-10-20"
 output:
   rmdformats::downcute:
+    use_bookdown: true
     self_contained: true
-    thumbnails: true
+    thumbnails: false
     lightbox: true
-    gallery: false
-    highlight: tango
+    gallery: true
+    code_folding: show
+    out_width: 90%
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(dplyr)
-library(ggplot2)
+```{r}
+#| setup, include=FALSE
+
+Sys.setlocale(category="LC_TIME", locale="English_United States.1252")
+Sys.setenv(LANG="en")
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  fig.width = 10, 
+  fig.height = 10, 
+  fig.align = "center", 
+  out.width = "90%"
+)
+
+library(tidyverse)
 library(mgcv)
+library(gratia)
+library(kableExtra)
+
+source("helpers/predict.R")
+source("helpers/statistics.R")
+
+theme_set(
+  theme_bw() +
+    theme(
+      text = element_text(family = "serif"),
+      strip.text = element_text(hjust = 0.5, size = 14, face = "bold"),
+      strip.text.y.right = element_text(angle = 0),
+      strip.text.y.left = element_text(angle = 0),
+      title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.title = element_text(hjust = 0.5, size = 16, face = "plain"),
+      legend.title = element_text(hjust = 0.5),
+      legend.text = element_text(size = 12),
+      panel.border = element_rect(color = "black", linewidth = 1)
+    )
+)
 ```
+
+# REFERENCES
+This tutorial was developed using the following resources:
+
+-   <https://peerj.com/articles/6876/>
+-   <https://fromthebottomoftheheap.net/2021/02/02/random-effects-in-gams/>
+-   <https://lter.github.io/lterdatasampler/articles/hbr_maples_vignette.html>
 
 # Introduction
 
@@ -24,69 +63,470 @@ Welcome to the `mgcv` skill training session! In this tutorial, we will explore 
 
 By the end of the session, you will have gained practical experience in:
 
-- Selecting the appropriate model type (GLM, LMM, GAM, GLMM, GAMM) and family (e.g., `ziP`, `betar`, `gaullss`).
-- Fitting and parameterizing models using the `mgcv` package.
-- Visualizing key diagnostics, including residual plots, QQ plots, and fitted values.
-- Optimizing model performance for larger datasets using `bam`.
+-   Selecting the appropriate model type (GLM, LMM, GAM, GLMM, GAMM) and family (e.g., `ziP`, `betar`, `gaullss`).
+-   Fitting and parameterizing models using the `mgcv` package.
+-   Visualizing key diagnostics, including residual plots, QQ plots, and fitted values.
+-   Optimizing model performance for larger datasets using `bam`.
 
 ## Sections Overview
 
 This tutorial is divided into the following sections:
 
-1. **Introduction to Generalized Models and Smoothing Functions**  
-   We will start by discussing the range of models that can be fitted using `mgcv`, including GLMs, LMMs, GLMMs, GAMs, and GAMMs. You will also learn about the available families and smoothing functions in `mgcv`.
+1.  **Introduction to Generalized Models and Smoothing Functions**\
+We will start by discussing the range of models that can be fitted using `mgcv`, including GLMs, LMMs, GLMMs, GAMs, and GAMMs. You will also learn about the available families and smoothing functions in `mgcv`.
 
-2. **Fitting Generalized Linear Models (GLM)**  
-   In this section, we will fit basic GLMs to datasets using different families, such as Poisson for count data and binomial for binary data.
+2.  **Fitting Generalized Linear Models (GLM)**\
+In this section, we will fit basic GLMs to datasets using different families, such as Poisson for count data and binomial for binary data.
 
-3. **Fitting Linear Mixed Models (LMM) and Generalized Linear Mixed Models (GLMM)**  
-   This section covers fitting LMMs and GLMMs to handle grouped data and random effects.
+3.  **Fitting Linear Mixed Models (LMM) and Generalized Linear Mixed Models (GLMM)**\
+This section covers fitting LMMs and GLMMs to handle grouped data and random effects.
 
-4. **Fitting Generalized Additive Models (GAM) and Generalized Additive Mixed Models (GAMM)**  
-   We will extend GLMs and GLMMs by incorporating smoothing terms for continuous predictors, resulting in GAMs and GAMMs.
+4.  **Fitting Generalized Additive Models (GAM) and Generalized Additive Mixed Models (GAMM)**\
+We will extend GLMs and GLMMs by incorporating smoothing terms for continuous predictors, resulting in GAMs and GAMMs.
 
-5. **Model Diagnostics and Visualization**  
-   You will learn how to visualize model diagnostics, including residuals, QQ plots, and fitted values, to assess the quality of the model fit.
+5.  **Model Diagnostics and Visualization**\
+You will learn how to visualize model diagnostics, including residuals, QQ plots, and fitted values, to assess the quality of the model fit.
 
-6. **Optimizing for Large Datasets Using `bam`**  
-   For large datasets, the `bam` function in `mgcv` provides computational efficiency. This section will focus on optimizing model fitting for larger datasets.
+6.  **Optimizing for Large Datasets Using `bam`**\
+For large datasets, the `bam` function in `mgcv` provides computational efficiency. This section will focus on optimizing model fitting for larger datasets.
 
----
+-------------------------------------------------------------------------------
 
-## 1. Introduction to Generalized Models and Smoothing Functions
+## Introduction to Generalized Models and Smoothing Functions
 
 `mgcv` provides a unified framework for modeling a wide range of statistical models, including:
 
-- **Generalized Linear Models (GLMs)**: A generalization of linear regression, allowing for different types of response distributions (e.g., Poisson, binomial).
-- **Linear Mixed Models (LMMs)**: Extends linear models by incorporating random effects to account for grouped data.
-- **Generalized Linear Mixed Models (GLMMs)**: Extends GLMs by including random effects.
-- **Generalized Additive Models (GAMs)**: Extends GLMs by allowing nonlinear relationships through smoothing functions.
-- **Generalized Additive Mixed Models (GAMMs)**: Combines GAMs and GLMMs, allowing for both smoothing and random effects.
+-   **Generalized Linear Models (GLMs)**: A generalization of linear regression, allowing for different types of response distributions (e.g., Poisson, binomial).
+-   **Linear Mixed Models (LMMs)**: Extends linear models by incorporating random effects to account for grouped data.
+-   **Generalized Linear Mixed Models (GLMMs)**: Extends GLMs by including random effects.
+-   **Generalized Additive Models (GAMs)**: Extends GLMs by allowing nonlinear relationships through smoothing functions.
+-   **Generalized Additive Mixed Models (GAMMs)**: Combines GAMs and GLMMs, allowing for both smoothing and random effects.
 
 Common families in `mgcv` include:
 
-- **Gaussian**: For continuous, normally distributed data.
-- **Poisson**: For count data.
-- **Binomial**: For binary or proportion data.
-- **Zero-inflated Poisson (`ziP`)**: For count data with excess zeros.
-- **Beta regression (`betar`)**: For data bounded between 0 and 1.
-- **Gaussian location-scale (`gaullss`)**: For modeling the mean and variance simultaneously.
+-   **Gaussian**: For continuous, normally distributed data.
+-   **Poisson**: For count data.
+-   **Binomial**: For binary or proportion data.
+-   **Zero-inflated Poisson (`ziP`)**: For count data with excess zeros.
+-   **Beta regression (`betar`)**: For data bounded between 0 and 1.
+-   **Gaussian location-scale (`gaullss`)**: For modeling the mean and variance simultaneously.
+-   **Zero inflated (hurdle) Poisson location-scale (`ziplss`)**: For modelling count and occurrence simultaneously (e.g. presence/absence and abundance).
 
 Smoothing functions available in `mgcv` include:
 
-- **Thin-plate splines (`s()`)**: Flexible smooths for most continuous predictors.
-- **Random effects smooths (`re()`)**: For random effects in grouped data.
+-   **Thin-plate splines (`bs = "tp"`)**: A flexible, isotropic smoothing function.
+-   **Cubic regression splines (`bs = "cr"/"cs"`)**: Penalized/Shrinkage cubic regression splines.
+-   **Random effects (`s = "re"`)**: For modeling random effects in Linear, Generalized Linear, and Generalized Additive Mixed Models (LMM/GLMM/GAMM).
+-   **Factor smooth interactions (`s = "fs"`)**: For estimating random additive effects in GAMMs.
+-   **Gaussian process (`s = "gp"`)**: For interpolating autocorrelated data, also sometimes known as kriging in GIS settings.
 
----
+-------------------------------------------------------------------------------
 
-## 2. Fitting Generalized Linear Models (GLM)
+## A few technical notes
+### Optimization method:
+When using `gam` or `bam` in `mgcv`, it is important to specify the `method` argument. The default is `method = "GCV.Cp"`, however unless you need to compare models with different parametric terms, it is recommended to use `method = "REML"` with `gam` and `method = "fREML"` for `bam`:
+```{r}
+#| eval: FALSE
 
-GLMs can handle a wide range of response distributions. We can use `mgcv`'s `gam` function to fit GLMs by specifying the appropriate family.
+# Incorrect
+gam(y ~ x, data = data)
+
+# Correct
+gam(y ~ x, data = data, method = "REML")
+```
+
+### Specifying multiple smoothing functions
+Sometimes we might want to specify multiple smoothing functions (bases) for a single term, an example later will come up later in this tutorial where we want a random cyclical smooth effect. `mgcv` doesn't contain a built-in random cyclical smooth basis, however it does contain a random smooth basis and a cyclic smooth basis, these can then be combined by specifying both in the  `bs` argument to  `s()`:
+```{r}
+#| eval: FALSE
+
+gam(y ~ s(f, x, bs=c("fs", "cc")), data = data, method="REML")
+```
+
+### Specifying "smooth" interactions
+When specifying smooth interactions in `mgcv`, often interaction *can* be specified simply by listing multiple terms inside a single `s()` term. However, this can lead to issues with model identifiability and interpretation. It is often better to separate the main and interaction effects using the `ti()`. The `ti()` function essentially functions as the `:` operator for standard R formulas, but for smooth terms (including random effects):
+```{r}
+#| eval: FALSE
+
+# Standard
+gam(y ~ s(x, y), data = data, method="REML")
+
+# Better
+gam(y ~ s(x) + s(y) + ti(x, y), data = data, method="REML")
+```
+
+# Fitting Generalized Linear Models
+
+Fitting models with `mgcv` mirrors the base `R` syntax for LMs and GLMs. To illustrate this, we will fit a simple linear model and a binomial GLM to the `iris` dataset.
 
 ```{r}
-# Fit a GLM model using Poisson family for count data
-glm_model <- gam(Sepal.Width ~ Sepal.Length + Species, family = "quasipoisson", data = iris)
+iris_data <- iris %>% 
+  as_tibble %>% 
+  mutate(
+    Species = factor(Species)
+  )
 
-# Summarize the GLM
-summary(glm_model)
+# Fit a linear model
+lm_iris <- gam(
+  Sepal.Length ~ Sepal.Width + Species, 
+  data = iris_data,
+  method = "REML"
+)
+
+# Fit a binomial GLM
+glm_iris <- gam(
+  I(Species == "virginica") ~ Sepal.Width, 
+  data = iris_data, 
+  family = "binomial",
+  method = "REML"
+)
 ```
+
+All standard GLM familes such as `gaussian`, `poisson`, `binomial`, `quasipoisson` and `quasibinomial` can also be used with `gam` by specifying the `family` argument.
+
+## Model diagnostics with `mgcv` and `gratia`
+
+Unfortunately, the unbuilt diagnostic tools with `mgcv` are not ideal. However, the `gratia` package provides a set of functions for diagnostics and predictions that are more user-friendly and integrate with the `tidyverse` and `ggplot2` ecosystem.
+
+`draw` Draws the marginal effects of the terms. *(By default only plots the smooth terms like `plot`, but setting `parametric=TRUE` will also plot the fixed terms)*
+
+```{r, fig.height=5}
+# Draw the marginal effects of the terms
+draw(lm_iris, parametric=T)
+```
+
+`appraise` Provides the standards diagnostic plots; QQ-plot, residual vs. linear predictor values, residual histogram and observed vs. fitted values. *(Equivalent to `gam.check` in `mgcv` and `plot` for `lm` and `glm`)*
+
+```{r}
+# Provide the standard diagnostic plots
+appraise(lm_iris)
+```
+
+## Predicting and plotting with `mgcv`, `gratia` and `ggplot2`
+
+`fitted_values`/`add_fitted_samples` Adds the fitted values to a `tibble`(`data.frame`).
+
+```{r}
+#| fig.height: 5
+#| fig.width: 6
+
+# Add the fitted values to the data
+fd1 <- fitted_values(lm_iris, iris_data)
+fd2 <- add_fitted_samples(iris_data, lm_iris, n = 100)
+
+fd1 %>% 
+  ggplot(aes(x = Sepal.Width, color = Species)) +
+  geom_point(aes(y = Sepal.Length)) +
+  geom_line(aes(y = .fitted), linewidth = 1) +
+  geom_ribbon(
+    aes(ymin = .lower_ci, ymax = .upper_ci),
+    alpha = 0.15,
+    linewidth = 0
+  ) +
+  geom_line(
+    data = fd2, 
+    aes(y = .fitted, group = paste0(Species, .draw)), 
+    linewidth = 0.5, 
+    alpha = 0.15
+  ) +
+  coord_cartesian(expand = F)
+```
+
+And `overview` provides a tidy summary of both the fixed (parametric), smooth, random etc. effects. *(Here we will use a modified version called `mod_overview`, hopefully it will be part of `gratia`)*
+
+```{r}
+lm_iris %>% 
+  mod_overview(accuracy = 0.00001, parametric_effect_sizes = T, stars = T) %>% 
+  select(!c(k, edf)) %>% # only relevant when the model includes smooth terms
+  kbl(
+    caption = "Linear model on `iris` summary",
+    digits = 3, 
+    align = "rcccccc"
+  ) %>% 
+  kable_material(
+    lightable_options = c("hover", "striped"),
+    full_width = F
+  ) %>% 
+  row_spec(0, bold = T, font_size = 18) %>% 
+  row_spec(1:4, font_size = 14)
+```
+
+# Fitting Generalized Linear Mixed Models
+
+`mgcv` can also fit mixed models, including Linear Mixed Models (LMMs) and Generalized Linear Mixed Models (GLMMs). To illustrate this, we will fit a simple LMM and GLMM to the `hbr_maples` dataset from `lterdatasampler`.
+
+```{r}
+maple_data <- lterdatasampler::hbr_maples %>%
+  mutate(
+    year = factor(year),
+    elevation = elevation %>% 
+      as.character %>% 
+      replace_na("High") %>% 
+      factor(c("Low", "Mid", "High"))
+  ) 
+```
+
+The dataset contains stem and leaf measurement data for Sugar Maple saplings from 12 transects in 2003/2004. In this tutorial we will focus on modeling the relationship between stem dry mass (`stem_dry_mass`) and stem length (`stem_length`). If we plot the data, we can see a linear relationship, but with variation between transects and years. 
+```{r}
+#| class.source: 'fold-hide'
+#| message: FALSE
+#| warning: FALSE
+
+maple_data %>% 
+  ggplot(aes(stem_dry_mass, stem_length, color=transect, shape=year, linetype=year)) +
+  geom_point() +
+  geom_smooth(method = "gam", se=F) +
+  geom_smooth(aes(group=1), method = "lm", color="black", linetype="solid")
+```
+
+As such we should fit a model like:
+$$\text{stem_length} = \beta_0 + \beta_1 \cdot \text{stem_dry_mass}\;+ $$
+$$\gamma_{transect} + \gamma_{year} + \text{stem_dry_mass} \cdot \gamma_{transect}\;+ $$
+$$\text{stem_dry_mass} \cdot \gamma_{year} + \text{stem_dry_mass} \cdot \gamma_{transect} \cdot \gamma_{year} + \epsilon$$
+
+Where $\gamma_{transect}$ and $\gamma_{year}$ are random effects for transect and year, respectively. We can fit this model using the `gam` function in `mgcv`.
+
+```{r}
+maple_lmm <- gam(
+  stem_length ~ 
+    stem_dry_mass +
+    s(year, bs="re") +
+    s(transect, bs="re") + 
+    ti(year, transect, bs="re") + 
+    ti(year, stem_dry_mass, bs="re") +
+    ti(transect, stem_dry_mass, bs="re") +
+    ti(year, transect, stem_dry_mass, bs="re"),
+  data = maple_data, 
+  family = "gaussian",
+  method = "REML"
+)
+```
+
+Let's verify the model fit using the `appraise` function.
+```{r}
+appraise(maple_lmm)
+```
+
+We can then inspect the results using the `mod_overview` function.
+```{r}
+#| class.source: 'fold-hide'
+
+maple_lmm %>% 
+  mod_overview(parametric_effect_sizes = T, stars = T) %>% 
+  kbl(
+    caption = "LMM on `hbr_maples` summary",
+    digits = 3, 
+    align = "rcccccc"
+  ) %>%
+  kable_material(
+    lightable_options = c("hover", "striped"),
+    full_width = F
+  ) %>%
+  row_spec(0, bold = T, font_size = 18)
+```
+
+And plot the fit:
+```{r}
+maple_lmm_pred_main <- fitted_values(
+  maple_lmm,
+  exclude=c(
+    "s(year)",
+    "s(transect)",
+    "ti(year,transect)",
+    "ti(year,stem_dry_mass)",
+    "ti(transect,stem_dry_mass)",
+    "ti(year,transect,stem_dry_mass)"
+  )
+) %>% 
+  bind_cols(select(maple_data, !any_of(names(.)))) 
+
+maple_lmm_pred_all <- fitted_values(maple_lmm) %>%
+  bind_cols(select(maple_data, !any_of(names(.))))
+```
+
+```{r}
+#| class.source: 'fold-hide'
+
+maple_lmm_pred_main %>%
+  ggplot(aes(stem_dry_mass, .fitted, ymin=.lower_ci, ymax=.upper_ci)) +
+  geom_point(aes(y=stem_length, color=transect)) +
+  geom_line(
+    data = maple_lmm_pred_all,
+    aes(color = transect, linetype=year),
+  ) +
+  geom_line() +
+  geom_ribbon(alpha=0.2) +
+  coord_cartesian(expand=F) +
+  labs(y = "Stem Length", x = "Stem Dry Mass") 
+```
+
+# Fitting Generalized Additive Models
+This section will cover the core functionality of `mgcv` (and  `gratia`) - fitting Generalized Additive Models (GAMs). GAMs are a generalization of GLMs that allow for nonlinear relationships between predictors and the response variable. One of the major strengths of `mgcv` is that it allows for the inclusion of smooth terms, while 
+
+# Fitting Generalized Additive Mixed Models
+Generalized additive mixed models (GAMMs) can take two forms, the first is a GAM with linear random effects, and the second is a GAM with smooth random effects. Both can be fitted using the `s` term in `mgcv`, where `bs = "re"` is used for linear random effects and `bs = "fs"` is used for smooth random effects. Here we will use a dataset of bird latitude abundance `bird_move` from `gratia` to illustrate the latter.
+```{r}
+bird_data <- bird_move %>% 
+  filter(count > 0) %>%
+  group_by(species) %>%
+  mutate(
+    weight = count,
+    weight = weight / mean(weight)
+  ) %>% 
+  ungroup
+```
+
+The dataset contains weekly observations of bird latitude abundance for 6 different species.
+```{r}
+#| class.source: 'fold-hide'
+
+bird_data %>% 
+  ggplot(aes(week, latitude, z=count)) +
+  stat_summary_2d(bins=c(15, 5)) +
+  scale_fill_viridis_c(option = "A", trans = "log10", limits = c(0.1, 25)) +
+  facet_wrap(~species) +
+  coord_cartesian(expand = F) +
+  theme(
+    panel.background = element_rect(fill = "black"),
+    panel.grid = element_blank()
+  )
+```
+As we can see the species have a common pattern of migrating north during summer and south during winter, but with slightly different timings. 
+
+Thus we need to consider three things:
+* How do we model the migration pattern?
+* Which smooth term is appropriate?
+* How do we parametrize the model?
+
+For the first question, we can use `latitude` as the response variable and `week` as the predictor. We can then add `species` as a interacting random smooth term with `week` to model the differences in migration patterns between species.
+
+For the second question, if we consider that migration patterns are cyclical, it is logical that we should use a cyclical smooth term for the week variable. `mgcv` contains two cyclic smooth terms `cc` for cyclic cubic regression splines and `cp` for cyclic penalized regression splines. 
+
+Lastly, for the third question, we can parametrize the model in two ways. The first is to simply include a single smooth term with both `species` and `week`, however this makes it hard to disentangle the marginal (main) effect of `week` and the interaction effect of `species` and `week`. The second is to include three terms, a main effect of `week`, a random effect of `species`, and a smooth random interaction term between `species` and `week`. This will allow us to separate the main and interaction effects.
+
+```{r}
+gam_bird_mod_simple <- bam(
+  # `k` is set so the two models have the approximately same number of EDF
+  latitude ~ s(week, species, bs=c("fs", "cc"), k=5),
+  data = bird_data, 
+  weights = weight,
+  family = "gaussian",
+  discrete = T,
+  method = "fREML"
+) 
+
+gam_bird_mod <- bam(
+  latitude ~ s(week, bs="cc") + s(species, bs="re") + ti(species, week, bs=c("fs", "cc")),
+  data = bird_data, 
+  weights = weight,
+  family = "gaussian",
+  discrete = T,
+  method = "fREML"
+) 
+```
+
+Let's compare the output from the two models:
+```{r}
+#| class.source: 'fold-hide'
+#| results: "asis"
+
+gam_bird_mod_simple %>% 
+  mod_overview(
+    parametric_effect_sizes = T, 
+    stars = T
+  ) %>% 
+  kbl(
+    caption = "GAMM on `bird_move` with combined main and interaction effect",
+    digits = 3, 
+    align = "rcccccc"
+  ) %>%
+  kable_material(
+    lightable_options = c("hover", "striped"),
+    full_width = F
+  ) %>%
+  row_spec(0, bold = T, font_size = 18)
+```
+
+```{r}
+#| class.source: 'fold-hide'
+#| results: "asis"
+
+gam_bird_mod %>% 
+  mod_overview(
+    parametric_effect_sizes = T, 
+    stars = T
+  ) %>% 
+  kbl(
+    caption = "GAMM on `bird_move` with separate main and interaction effects",
+    digits = 3, 
+    align = "rcccccc"
+  ) %>%
+  kable_material(
+    lightable_options = c("hover", "striped"),
+    full_width = F
+  ) %>%
+  row_spec(0, bold = T, font_size = 18)
+```
+As we can see the output from the second model is more interpretable, as we get separate statistics for the main and interaction effects.
+
+Another benefit of the second model is that we can easily visualize the main and interaction effects. Here we use the `data_slice` function from `gratia` to generate a prediction dataset with evenly spaced weeks and all species. We then use the `fitted_values` with the `exclude` term to predict both with and without the effect of `species`, i.e. with and without random effects.
+```{r}
+prediction_data <- data_slice(
+  gam_bird_mod,
+  week = evenly(week, 100),
+  species = species 
+)
+
+predictions <- fitted_values(gam_bird_mod, prediction_data) 
+
+main_effect_predictions <- fitted_values(
+  gam_bird_mod, 
+  prediction_data, 
+  exclude=c("s(species)", "ti(species,week)")
+) %>% 
+  select(.fitted, .lower_ci, .upper_ci)
+
+predictions <- predictions %>% 
+  mutate(
+    main = main_effect_predictions
+  ) %>% 
+  unnest(main, names_sep="_")
+```
+
+We can then plot the results:
+```{r}
+#| class.source: 'fold-hide'
+
+predictions %>% 
+  ggplot(aes(x=lubridate::date_decimal(2000 + week/52))) +
+  geom_point(
+    data = bird_data,
+    aes(y=latitude, fill=species, size=count),
+    shape = 21,
+    color = "black",
+    show.legend = F
+  ) +
+  geom_line(aes(y=main_.fitted), linewidth=2) +
+  geom_ribbon(aes(ymin=main_.lower_ci, ymax=main_.upper_ci), alpha=0.25) +
+  geom_line(aes(y=.fitted, color=species), show.legend=F, linewidth=0.5, linetype="dashed") +
+  geom_ribbon(aes(ymin=.lower_ci, ymax=.upper_ci, fill=species), alpha=0.1, key_glyph=draw_key_point) +
+  scale_color_brewer(palette = "Dark2", guide="none") +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_x_datetime(expand = expansion(), date_breaks = "1 month", date_labels = "%B") +
+  scale_y_continuous(expand = expansion()) +
+  coord_polar() +
+  labs(x = "Date", y = "Latitude", color = "Species", fill = "Species") +
+  guides(
+    fill = guide_legend(
+      override.aes = list(
+        alpha = 1,
+        size = 8, 
+        stroke = 1,
+        shape = 21, 
+        color = "black"
+      )
+    )
+  ) 
+```
+
+# Optimizing for large datasets using `bam` and `gamm4`
