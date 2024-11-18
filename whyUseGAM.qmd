@@ -1,15 +1,39 @@
 ---
-title: "Why use GAMs for (G)LMs?"
-author: "Asger Svenning"
-format: pdf
+title: "Why should I ever use GAMs when I just want a (G)LM?"
+author: 
+  - name: "Asger Svenning"
+    affiliations:
+      - name: "Department of Ecoscience, Aarhus University"
+        city: "Aarhus"
+    email: "asgersvenning@ecos.au.dk"
+format: 
+  pdf:
+    template-partials: 
+      - title.tex
+    number_sections: true
 header-includes:
+  - \usepackage[a4paper, margin=0.8in]{geometry}
   - \usepackage{amsmath, amssymb, amsthm}
-  - \usepackage{tabularx}
+  - \usepackage{tabularx, makecell}
   - \usepackage{nicefrac}
+  - \usepackage{hyperref}
+  - \usepackage[noblocks]{authblk}
+  - \renewcommand*{\Authsep}{, }
+  - \renewcommand*{\Authand}{, }
+  - \renewcommand*{\Authands}{, }
+  - \renewcommand\Affilfont{\small}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, fig.width = 10, fig.height = 10, fig.align = "center", out.width = "90%")
+knitr::opts_chunk$set(
+  echo = FALSE,
+  cache = FALSE,
+  fig.width = 10, 
+  fig.height = 10, 
+  fig.align = "center", 
+  out.width = "90%"
+)
+
 library(tidyverse)
 library(mgcv)
 library(gratia)
@@ -35,30 +59,30 @@ theme_set(
 ```
 
 ```{r, fig.width=15, fig.height=15}
-iris_mod <- iris %>% 
-  gam(
-    Petal.Length ~ s(Sepal.Length, Species, bs = "fs"), data = .
-  )
+iris_mod <- gam(Petal.Length ~ s(Sepal.Length, Species, bs = "fs"), data = iris)
 
-iris_expanded <- iris %>% 
-  {expand_grid(
-    Sepal.Length = seq(min(.$Sepal.Length), max(.$Sepal.Length), length.out = 100),
-    Species = unique(.$Species)
-  )}
-  
+iris_expanded <- expand_grid(
+  Sepal.Length = seq(
+    min(iris$Sepal.Length), 
+    max(iris$Sepal.Length), 
+    length.out = 100
+  ),
+  Species = unique(iris$Species)
+)
+
 iris_pred <- iris_expanded %>% 
-    mutate(
-        p = predict(iris_mod, ., type="link", se=T) %>% lapply(as.vector) %>% as_tibble
-    ) %>% 
-    unnest(
-        p
-    ) %>% 
-    mutate(
-        mid = fit,
-        low = fit - se.fit * 1.96,
-        high = fit + se.fit * 1.96,
-        across(c(mid, low, high), inv_link(iris_mod))
-    )
+  mutate(
+    p = predict(iris_mod, ., type="link", se=T) %>% 
+      lapply(as.vector) %>% 
+      as_tibble
+  ) %>% 
+  unnest(p) %>% 
+  mutate(
+    mid = fit,
+    low = fit - se.fit * 1.96,
+    high = fit + se.fit * 1.96,
+    across(c(mid, low, high), inv_link(iris_mod))
+  )
 
 iris_post <- iris_expanded %>% 
   add_fitted_samples(iris_mod, n = 100)
@@ -110,7 +134,7 @@ iris %>%
 # Introduction
 In this short example I hope to convince you that `mgcv` and the `gam` function is useful for more than just GAMs, but can - and indeed should - often be used in the case where the relationship under interest is linear (i.e. where a LM would usually be used).
 
-I will show an example of how an unknown non-linear confounding variable can easily be accounted for using a GAM, while either including it or not in a standard LM will lead to biased (incorrect) estimates - which in the worst case can lead to opposite conclusions.
+I will show how an unknown non-linear confounding variable can be accounted for using a GAM, while including or excluding it in a standard LM leads to biased estimates, potentially resulting in opposite conclusions.
 
 ## Sampling a smooth confounding curve
 To illustrate the problem, we will first need to define a way to generate a non-linear function. Later we will sample a new random non-linear function for each experiment, which is then used as the relationship between the confounding variable and the response. 
@@ -124,7 +148,11 @@ plot_smooth <- function(sfun, z, s, zlim) {
     ggplot(aes(z, s)) +
     geom_function(fun = sfun, xlim = zlim, color = "red", linewidth = 1) +
     geom_point(size = 2) +
-    labs(title = latex2exp::TeX("Control points and curve for one instance of $f_s$"))
+    labs(
+      title = latex2exp::TeX(
+        "Control points and curve for one instance of $f_s$"
+      )
+    )
   
   print(plt)
 }
@@ -132,25 +160,19 @@ plot_smooth <- function(sfun, z, s, zlim) {
 
 To do this, we generate $N$ evenly spaced control points, $c$, along the $z$-axis, and then sample $N$ random values from a uniform distribution to generate the $s$-values. The position of the control points on the $z$-axis is then subtracted from the $s$-values to give a slight overall negative trend on average:
 \begin{align*}
-  c_z &\sim \mathcal{U}(z_{\mathrm{min}}, z_{\mathrm{max}}), \quad\quad\;\;\; z_{\mathrm{min}} = -0.1, \quad z_{\mathrm{max}} = 1.1 \\
-  c_s &\sim \mathcal{U}(s_{\mathrm{min}}, s_{\mathrm{max}}) - z, \quad s_{\mathrm{min}} = -1, \quad\;\;\; s_{\mathrm{max}} = 1
+c_z &\sim \mathcal{U}(z_{\mathrm{min}}, z_{\mathrm{max}}), \quad\quad\;\;\; z_{\mathrm{min}} = -0.1, \quad z_{\mathrm{max}} = 1.1 \\
+c_s &\sim \mathcal{U}(s_{\mathrm{min}}, s_{\mathrm{max}}) - z, \quad s_{\mathrm{min}} = -1, \quad\;\;\; s_{\mathrm{max}} = 1
 \end{align*}
 This is done to shift the distribution of confounding functions in such a way that the confounding effect is more likely to be opposite the true effect of $x$ on $y$, which for this experiment will be positive one-to-one relationship. 
 
 We then use the `splinefun` function to generate a function, $f_s$, that smoothly interpolates between the control points:
 $$f_s(z) = \text{splinefun}(c_z, c_s, \text{method} = \text{"natural"})$$
-\clearpage
 
 ```{r, echo=T, fig.cap="Code for sampling a random non-linear function for the confounding variable."}
-get_sfun <- function(
-    zlim = c(-0.1, 1.1), 
-    slim = c(-1, 1), 
-    ctrl.pts=10, 
-    plot=F
-  ) {
+get_sfun <- function(zlim = c(-0.1, 1.1), slim = c(-1, 1), ctrl.pts = 10, plot = F) {
   z <- seq(zlim[1], zlim[2], length.out = ctrl.pts)
   c <- runif(ctrl.pts, min = slim[1], max = slim[2]) - z
-
+  
   sfun <- splinefun(z, c, method = "natural")
   if (plot) plot_smooth(sfun, z, c, zlim)
   
@@ -171,14 +193,15 @@ get_sfun(plot=T)
 
 ```{r}
 plot_data <- function(data) {
+  pt <- 
+    "Raw relationship between the observed\n (x, z) and response (y) variables"
+  
   plt <- data %>%
     ggplot() +
     geom_autopoint(size=0.25) +
     geom_autodensity(color = "black", linewidth = 0.75, fill = "gray75") +
     facet_matrix(vars(x, z, y), vars(x, z, y), layer.diag = 2) +
-    labs(
-      title = "Raw relationship between the observed\n (x, z) and response (y) variables"
-    ) 
+    labs(title = pt) 
   
   return(invisible(plt))
 }
@@ -194,7 +217,6 @@ plot_models <- function(gam_mod, lin_mod1, lin_mod2, data_plot) {
     rm_titles &
     patchwork::plot_annotation(
       title = "Linear model (y ~ x)",
-      # subtitle = str_wrap("Omitting z from the model results in a malformed model due to the confounding effect of z on y", 40),
       theme = theme_get()
     )
   
@@ -202,7 +224,6 @@ plot_models <- function(gam_mod, lin_mod1, lin_mod2, data_plot) {
     rm_titles &
     patchwork::plot_annotation(
       title = "Linear model (y ~ x + z)",
-      # subtitle = str_wrap("Including z as a linear term catastrophically fails to capture the confounding effect of z on y", 40),
       theme = theme_get()
     )
   
@@ -210,12 +231,10 @@ plot_models <- function(gam_mod, lin_mod1, lin_mod2, data_plot) {
     rm_titles &
     patchwork::plot_annotation(
       title = "GAM model (y ~ x + s(z))",
-      # subtitle = str_wrap("The smooth term s(z) captures the confounding effect of z on y, and yields a well-behaved model", 40),
       theme = theme_get()
     )
   
   cps <- list(data_plot, p1, p2, p3) %>% 
-    # lapply(ggplot2::ggplotGrob) %>%
     lapply(patchwork::wrap_elements) %>% 
     patchwork::wrap_plots() 
   
@@ -225,13 +244,28 @@ plot_models <- function(gam_mod, lin_mod1, lin_mod2, data_plot) {
 }
 ```
 
-We will now define a simple experiment where we generate a dataset with three variables: $x$, $z$, and $y$. Both $x$ and $z$ are generated as a linear function of a latent variable $l$, with a small amount of uniform noise added. This also means that $x$ and $z$ are highly collinear (in this case the correlation coefficient $\rho \approx 0.95$), a case where common wisdom is to exclude one of the variables from the model to avoid multicollinearity. However, as we will see later, in the case of confounding variables excluding the variable can lead to biased estimates, and thus incorrect conclusions.
+We will now define a simple experiment where we generate a dataset with three variables: $x$, $z$, and $y$. 
+Both $x$ and $z$ are generated as linear functions of a latent variable $l$, with a small amount of uniform noise added. This results in $x$ and $z$ being highly correlated (correlation coefficient $\rho \approx 0.95$), leading to multicollinearity when both are included in a regression model.
+
+## Multicollinearity and Confounding Variables
+
+Multicollinearity occurs when predictor variables are highly correlated, which can inflate the variance of the coefficient estimates and make them unstable. A common approach in some introductory statistics courses or guides is to remove variables with high Variance Inflation Factor (VIF) values to mitigate multicollinearity. For instance, variables with a VIF greater than 5 or 10 are sometimes considered problematic and candidates for removal.
+
+However, when the correlated variable is a confounder—meaning it influences both the predictor and the response—excluding it from the model can introduce bias due to omitted variable bias. In our case, $z$ is a confounding variable affecting both $x$ and $y$. Removing $z$ to reduce multicollinearity ignores its confounding effect, potentially leading to biased and inconsistent estimates of the effect of $x$ on $y$.
+
+While high multicollinearity can be concerning, it's important to weigh the trade-offs. Including the confounding variable ensures that we account for its effect, obtaining unbiased estimates of the primary predictor. In situations where the goal is to make accurate inferences about the relationships between variables, it's generally advisable to include confounders in the model, even at the expense of increased multicollinearity.
+
+In our experiment, the VIF for $x$ and $z$ is around 13–14, exceeding common thresholds. Despite this, we will include both variables in our models to highlight the importance of accounting for confounding effects, and we will explore how GAMs can handle this situation effectively.
+
+## Predictor-Reponse Relationship
 
 The response variable $y$ is then generated as a linear function of $x$, a randomly sampled non-linear function of $f_s(z)$, and some normally distributed noise:
 $$
-y = x + 3 \cdot f_s(z) + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \nicefrac{1}{8})
+y = x + 3 \cdot f_s(z) + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \nicefrac{1}{2})
 $$
 The specific form of the predictor-response relationship was chosen to ensure that the effect of the confounding variable, $z$, is stronger than the effect of the predictor of interest, $x$, while the noise is kept small enough that residual patterns in the diagnostic plots are very clear.
+
+## Model Fitting
 
 We then fit three models to the data: 
 
@@ -239,12 +273,15 @@ We then fit three models to the data:
 * A linear model with $y$ as a function of $x$ and $z$: `lm(y ~ x + z)`.
 * A linear model with $y$ as a function of $x$ only: `lm(y ~ x)`.
 
-The `experiment` function below generates the data, fits the models, and returns the estimated coefficient for $x$ and the standard error for each model. We also calculate the error (difference between the estimated coefficient and the true value of 1) and the z\textsubscript{error}-score, $\nicefrac{\tilde{\mu_x} - \mu_x}{\widetilde{\sigma(\mu_x)}}$, for each model. 
+The `experiment` function below generates the data, fits the models, and returns the estimated coefficient for $x$ and the standard error for each model. We also calculate the error (the difference between the estimated coefficient and the true value of 1) and the standardized estimate error, calculated as:
+
+$$z_{error} = \frac{\hat\mu_x - \mu_x}{\hat\sigma_{\hat\mu_x}}$$
+ 
+where $\hat{\mu}x$ is the estimated coefficient for $x$, and $\hat{\sigma}{\hat{\mu}_x}$ is its standard error. Under the assumption that the estimator is unbiased and normally distributed, this standardized estimate error should follow a standard normal distribution (mean 0, standard deviation 1). This allows us to assess whether the deviations of the estimates from the true value are within the expected range due to sampling variability.
 
 Note: It is very important to take notice of the fact that $f_s$ is a random non-linear function, and that for each iteration of the experiment a new $f_s$ is sampled. This is done to ensure that the results hold in general for non-linear confounding variables, and not just for a specific shape of $f_s$.
 
-\clearpage
-
+## Experiment code
 ```{r, echo=T, fig.cap="Code for executing one iteration of the experiment."}
 experiment <- function(plot=F) {
   data <- tibble(
@@ -257,7 +294,7 @@ experiment <- function(plot=F) {
     z = l + runif(500, -1, 1) / 10,  
     # Generate y as a linear function of x and a sampled non-linear function
     # of z, with some normally distributed noise
-    y = x + 5 * get_sfun()(z) + rnorm(500, 1/8)
+    y = x + 5 * get_sfun()(z) + rnorm(500, 0, 1/2)
   )
   
   if (plot) dp <- plot_data(data)
@@ -296,12 +333,12 @@ Before we dive into the results, let's look at the diagnostics for the three mod
 set.seed(112)
 experiment(T)
 ```
-As can be clearly be seen by inspecting the diagnostic plots, the GAM model captures the relationship between $y$ and $z$ well, leading to acceptable model diagnostics, whereas the linear models would have to be rejected based on the diagnostics. However, does this also result in incorrect estimates of the coefficient for $x$ ($\mu_x$)? 
+As can be clearly seen by inspecting the diagnostic plots, the GAM model captures the relationship between $y$ and $z$ well, leading to acceptable model diagnostics, whereas the linear models would have to be rejected based on the diagnostics. However, does this also result in incorrect estimates of the coefficient for $x$ ($\mu_x$)? 
 
 # Results
 To answer the question about whether the GAM model leads to better estimates of the coefficient for $x$, we will run the `experiment` function 2000 times and compare the results for the three models. Remember that for each iteration we sample a new smooth function $f_s$ and generate new data, this is done to ensure that the results hold in general for non-linear confounding variables.
 ```{r}
-plan(multisession, workers=12)
+plan(multisession, workers = availableCores() - 1)
 rep_exp <- future_map(1:2000, function(dummy) {
   experiment()
 }, .progress = T, .options = furrr_options(seed = 123)) %>% 
@@ -312,29 +349,29 @@ plan(sequential)
 
 ### Summary of results
 The table below shows the average estimated coefficient for $x$ ($\tilde{\mu_x}$), the mean absolute error ($\overline{\lvert \tilde{\mu_x} - \mu_x\rvert}$), the rate of confident opposite conclusions ($\overline{\mathrm{sign}(\tilde{\mu_x}) \neq \mathrm{sign}(\mu_x) \land \left\lvert \nicefrac{\tilde\mu_x}{\widetilde{\sigma(\mu_x)}} \right\rvert > 1.96}$), and the rate of estimates within the confidence interval ($\nicefrac{\lvert \tilde{\mu_x} - \mu_x\rvert}{\widetilde{\sigma(\mu_x)}} < 1.96$) for the three models.
-```{r, results="asis"}
+```{r}
 signif_rate <- rep_exp %>% 
-    group_by(type) %>% 
-    summarize(
-        signif = mean(abs(estimate/std.error) > 1.96)
-    )
+  group_by(type) %>% 
+  summarize(
+    signif = mean(abs(estimate/std.error) > 1.96)
+  )
 
 sr_gam <- signif_rate %>% 
-    filter(type == "gam") %>% 
-    pull(signif)
+  filter(type == "gam") %>% 
+  pull(signif)
 
 sr_lin1 <- signif_rate %>%
-    filter(type == "lin1") %>% 
-    pull(signif)
+  filter(type == "lin1") %>% 
+  pull(signif)
 
 sr_lin2 <- signif_rate %>%
-    filter(type == "lin2") %>% 
-    pull(signif)
+  filter(type == "lin2") %>% 
+  pull(signif)
 
 table_headers <- c(
   "type" = "Model",
-  "mu" = "Mean\\\\estimated slope",
-  "mae" = "Mean\\\\absolute error",
+  "mu" = "Mean estimated slope",
+  "mae" = "Mean absolute error",
   "conf_inc" = "Rate of confident\\\\opposite conclusions",
   "mu_cf" = "Rate of estimate\\\\within\\\\confidence interval"
 )
@@ -362,26 +399,25 @@ rep_exp %>%
         str_replace("%", "\\\\%")
     })
   ) %>% 
-  kableExtra::kable(
-    format = "latex",
+  kableExtra::kbl(
     booktabs = T,
     tabular = "tabularx",
     escape = F, 
-    col.names = magrittr::set_names(paste0("\\makecell{", table_headers, "}"), names(table_headers)),
+    col.names = paste0("\\makecell{", table_headers, "}") %>% 
+      magrittr::set_names(names(table_headers)),
     align = "lcccc", 
     digits = 2
   ) %>% 
   kableExtra::kable_paper(
     full_width = F
-  ) %>%
-  cat
+  )
 ```
 
 The three models also differ in the rate of rejecting the null hypothesis of $\mu_x=0$, with the GAM model rejecting the null hypothesis in `r round(sr_gam, 2)*100`% of the cases, the linear model with $y \sim x + z$ rejecting the null hypothesis in `r round(sr_lin1, 2)*100`\% of the cases, and the linear model with $y \sim x$ rejecting the null hypothesis in `r round(sr_lin2, 2)*100`\% of the cases.
 
 ### Expected versus observed error distribution
-The following plot shows the distribution of the z\textsubscript{error}-score, $\nicefrac{\tilde{\mu_x} - \mu_x}{\widetilde{\sigma(\mu_x)}}$, for the three models. The blue line shows the expected distribution of the z\textsubscript{error}-score under the hypothesis of $\mu_x=1$, i.e. a standard normal distribution. The green dashed line shows the median z\textsubscript{error}-score for each model, and the red line shows the expected value of the z\textsubscript{error}-score (0).
-```{r, fig.height=5, fig.cap="Distribution of the $z_error$-score, $\\nicefrac{\\tilde{\\mu_x} - \\mu_x}{\\widetilde{\\sigma(\\mu_x)}}$, for the three models, with the expected distribution under the null hypothesis of $\\mu_x=1$ (blue), the median $z_error$-score (green dashed) and the expected value of the $z_error$-score (red)."}
+The following plot shows the distribution of the standardized estimate error ($z_{error}$) for the three models. The blue line represents the expected standard normal distribution under the assumption that our estimator is unbiased and the model is correctly specified. Deviations from this distribution indicate potential bias or model misspecification.
+```{r, fig.height=5, fig.cap="Distribution of the standardized estimate error ($z_{error}$) for the three models. The blue curve represents the expected standard normal distribution (mean 0, standard deviation 1). The green dashed line indicates the median $z_{error}$-score for each model, and the red line marks the expected mean of zero under the assumption of unbiased estimates."}
 rep_exp %>% 
   mutate(
     type = case_when(
@@ -418,10 +454,21 @@ rep_exp %>%
     linetype = "dashed"
   ) +
   scale_y_continuous(expand = expansion(c(0, 0.1))) +
-  facet_wrap(~type, scales = "free_x") 
+  facet_wrap(~type, scales = "free_x") +
+  labs(x = latex2exp::TeX("$z_{error}$"), y = "Frequency")
 ```
 
 # Conclusion
-As clearly demonstrated the GAM model accurately accounts for the non-linear confounding variable, leading to unbiased estimates of the coefficient for $x$ and accurate confidence intervals. The purely linear models, on the other hand, fail to account for the confounding variable, leading to incorrect confidence intervals in the average case, and in the worst case, opposite conclusions. It also demonstrates how properly modelling confounding variables can lead to higher statistical power, even though the model is using more degrees of freedom.
+This simple example highlights the power of Generalized Additive Models (GAMs) in accounting for unknown non-linear relationships, particularly with confounding variables. Even when our primary interest lies in modeling a linear relationship, as with $y$ and $x$, ignoring or improperly handling confounders like $z$ can lead to biased estimates and misleading conclusions.
 
-This simple example illustrates how GAMs can be used to account for non-linear confounding variables, even when the relationship of interest is linear. This is especially important in observational studies where the relationship between the confounding variable and the response is unknown, and thus cannot be accounted for using a linear model.
+In our simulations, the GAM consistently provided unbiased estimates of the effect of $x$ on $y$, while the linear models struggled, especially when $z$ was excluded or included without accounting for its non-linear relationship with $y$. This demonstrates that GAMs are not just tools for modeling non-linear primary effects but are also invaluable for adjusting for non-linear confounding effects.
+
+## Key Takeaways
+
+* **Importance of Including Confounders**: Always consider including potential confounding variables in your models, even if they are highly correlated with your predictors. Excluding them can introduce significant bias.
+
+* **Handling Multicollinearity**: High multicollinearity increases the variance of coefficient estimates but does not bias them. When dealing with confounders, it's often better to accept higher variance to maintain unbiasedness.
+
+* **Flexibility of GAMs**: GAMs offer a flexible framework to model complex, non-linear relationships without specifying a particular functional form. This makes them particularly useful in exploratory analyses and when dealing with unknown or complex confounding effects.
+
+* **Practical Application**: In real-world data analysis, especially with observational data, relationships are often non-linear especially for confounding variables. GAMs provide a robust tool for uncovering and adjusting for these complexities, leading to more reliable and insightful results.

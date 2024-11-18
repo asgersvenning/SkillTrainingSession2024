@@ -1,9 +1,9 @@
 library(magrittr)
 library(dplyr)
 
-tidy_predict <- function(model, newdata, type = "link", se = FALSE) {
+tidy_predict <- function(model, newdata, type = "link", se = FALSE, ...) {
   # Predict using the model
-  pred <- predict(model, newdata = newdata, type = "link", se.fit = T) %>% 
+  pred <- predict(model, newdata = newdata, type = "link", se.fit = T, ...) %>% 
     lapply(function(x) {
       if (is.matrix(x)) {
         x <- x[, 1]
