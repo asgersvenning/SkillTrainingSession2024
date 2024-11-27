@@ -4,12 +4,12 @@ This repository contains the materials for a skill training session on using the
 
 ## Overview
 
-The session is structured around hands-on exercises using three datasets from the literature, with a focus on:
+The session is structured around hands-on exercises using three practical datasets, with a focus on:
 
 - Choosing the appropriate model family (`ziP`, `betar`, `gaullss`, etc.).
 - Understanding and applying different smoothing functions.
-- Efficiently using `gam`/`bam` for large datasets.
 - Visualizing model predictions and diagnostics (e.g., marginal and residual plots, QQ plots).
+- Efficiently using `gam`/`bam` for large datasets.
 
 ### Contents
 
@@ -21,16 +21,26 @@ The session is structured around hands-on exercises using three datasets from th
 
 ### Setup
 
-To follow along with the tutorial, you will need the following R packages:
+Before starting, ensure you have `R` installed on your computer. You can download it [here](https://cran.r-project.org/). 
+
+This tutorial is designed for use with **RStudio**, an integrated development environment (IDE) for `R`. Download **RStudio** [here](https://www.rstudio.com/products/rstudio/download/).
+
+#### Required `R` Packages
+
+To follow along with the tutorial, you will need the following `R` packages:
 
 - `mgcv`
-- `ggplot2`
-- `dplyr`
+- `tidyverse` (`ggplot2`, `dplyr`, `stringr`)
+- `gratia`
+- `magrittr`
+- `kableExtra`
+- `rmdformats`
+- `xfun`
 
-You can install these packages using the following commands in RGui (with RStudio closed):
+Install these packages by running the following command in **RGui** or a terminal with administrative privileges (ensure **RStudio** is closed):
 
 ```r
-install.packages(c("mgcv", "gratia", "tidyverse", "rmdformats", "xfun"))
+install.packages(c("mgcv", "tidyverse", "gratia", "magrittr", "kableExtra", "rmdformats", "xfun"))
 ```
 
 ### How to Use the Tutorial
@@ -38,6 +48,8 @@ install.packages(c("mgcv", "gratia", "tidyverse", "rmdformats", "xfun"))
 * (optional) Create a fork of this repository.
 * Download or clone this repository (or the fork).
 * Open tutorial.Rmd in RStudio.
+
+![](download_zip.png)
 
 Work through the tutorial, filling in the code where indicated and answering questions along the way.
 Run the code blocks in RStudio to see the outputs, predictions, and diagnostics visualized in real-time.
