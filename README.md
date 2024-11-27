@@ -84,4 +84,4 @@ Work through the tutorial, filling in the code where indicated and answering que
 
 ### Contact
 
-For any issues, feel free to open an issue in this repository or contact me at [asgersvenning\@ecos.au.dk](mailto:asgersvenning@ecos.au.dk){.email}.
+For any issues, feel free to open an issue in this repository or contact me at [asgersvenning\@ecos.au.dk](mailto:asgersvenning@ecos.au.dk).
