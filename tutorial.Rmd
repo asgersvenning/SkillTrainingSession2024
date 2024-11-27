@@ -17,25 +17,35 @@ output:
 div.question-box {
     width: 75%;
     margin: 10px auto;
-    padding: 0 10px;
+    padding: 5px;
     border: 3px solid var(--code-block-background);
     border-radius: 15px;
     background: var(--success-color);
     color: var(--text-color);
-    font-size: large;
+    font-size: medium;
     
     p {
       padding: 10px;
-      margin-top: 10px;
+      margin: 0;
       font-style: italic;
       color: color-mix(in hwb, var(--text-color), var(--page-background) 15%);
     }
     
-    p:before {
-      content: "Answer:";
+    p:first-child:before {
+      content: "Question: ";
       font-style: normal;
       font-weight: bold;
     }
+    
+    p ~ p:before {
+      content: "Answer: ";
+      font-style: normal;
+      font-weight: bold;
+    }
+}
+
+.page-content h1 {
+  margin-top: 3rem;
 }
 ```
 
@@ -90,7 +100,7 @@ syn_gam_rsq <- "N/A"
 syn_bam_rsq <- "N/A"
 ```
 
-# REFERENCES
+**REFERENCES**
 
 This tutorial was developed using the following resources:
 
@@ -125,13 +135,8 @@ This tutorial is divided into the following sections:
 4.  **Fitting Generalized Additive Models (GAM) and Generalized Additive Mixed Models (GAMM)**\
     We will extend GLMs and GLMMs by incorporating smoothing terms for continuous predictors, resulting in GAMs and GAMMs.
 
-5.  **Model Diagnostics and Visualization**\
-    You will learn how to visualize model diagnostics, including residuals, QQ plots, and fitted values, to assess the quality of the model fit.
-
 6.  **Optimizing for Large Datasets Using `bam`**\
     For large datasets, the `bam` function in `mgcv` provides computational efficiency. This section will focus on optimizing model fitting for larger datasets.
-
-------------------------------------------------------------------------
 
 ## Introduction to Generalized Models and Smoothing Functions
 
@@ -160,8 +165,6 @@ Smoothing functions available in `mgcv` include:
 -   **Random effects (`s = "re"`)**: For modeling random effects in Linear, Generalized Linear, and Generalized Additive Mixed Models (LMM/GLMM/GAMM).
 -   **Factor smooth interactions (`s = "fs"`)**: For estimating random additive effects in GAMMs.
 -   **Gaussian process (`s = "gp"`)**: For interpolating autocorrelated data, also sometimes known as kriging in GIS settings.
-
-------------------------------------------------------------------------
 
 ## A few technical notes
 
@@ -250,9 +253,9 @@ draw(iris_lm, parametric=T)
 ```
 
 ::: question-box
-**Question**: How would you interpret the output figures from `draw` for the linear model? Is the effect of `Sepal.Width` positive or negative? What do you think the `Sepal.Length` value of `virginica` at `Sepal.Width` of 3.5?
+How would you interpret the output figures from `draw` for the linear model? Is the effect of `Sepal.Width` positive or negative? What do you think the `Sepal.Length` value of `virginica` at `Sepal.Width` of 3.5?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 `appraise` Provides the standards diagnostic plots; QQ-plot, residual vs. linear predictor values, residual histogram and observed vs. fitted values. *(Equivalent to `gam.check` in `mgcv` and `plot` for `lm` and `glm`)*
@@ -265,9 +268,9 @@ appraise(iris_lm)
 ```
 
 ::: question-box
-**Question**: How would you interpret the output figures from `appraise` for the linear model? Are there any issues with the model fit?
+How would you interpret the output figures from `appraise` for the linear model? Are there any issues with the model fit?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 ## Predicting and plotting with `mgcv`, `gratia` and `ggplot2`
@@ -343,9 +346,9 @@ tab_iris_lm %>%
 ```
 
 ::: question-box
-**Question**: Could you see yourself using `mgcv` for simple linear models in the future? Why or why not?
+Could you see yourself using `mgcv` for simple linear models in the future? Why or why not?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 # Fitting Generalized Linear Mixed Models
@@ -378,9 +381,9 @@ maple_data %>%
 ```
 
 ::: question-box
-**Question**: What do you think the relationship between `stem_dry_mass` and `stem_length` is? How would you typically model this type of data?
+What do you think the relationship between `stem_dry_mass` and `stem_length` is? How would you typically model this type of data?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 Here we will fit a model like: $$
@@ -420,13 +423,13 @@ maple_lmm <- gam(
 ::: question-box
 Walk through each term in the model formula. What does each term represent and how does it contribute to the model? Focus on the difference between a "naked" term, a term wrapped in `s(...)` and `ti(...)`.
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 ::: question-box
 What is the purpose of the "bs" argument and what does `bs="re"` do?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 Let's verify the model fit:
@@ -440,9 +443,9 @@ Let's verify the model fit:
 This isn't perfect, but I'll leave it as an exercise to the reader to improve the model fit. *(Hint: try different terms and families)*
 
 ::: question-box
-**Question**: How would you interpret the output figures from `appraise` for the LMM model? What is the main issue with the model fit and what effect does it have on the interpretation of the model?
+How would you interpret the output figures from `appraise` for the LMM model? What is the main issue with the model fit and what effect does it have on the interpretation of the model?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 We can then inspect the results:
@@ -461,9 +464,9 @@ tab_maple_lmm %>%
 ```
 
 ::: question-box
-**Question**: How would you interpret the output of `mod_overview` for the LMM model? What is the effect of `stem_dry_mass` on `stem_length`, and does it depend on the year, transect or both?
+How would you interpret the output of `mod_overview` for the LMM model? What is the effect of `stem_dry_mass` on `stem_length`, and does it depend on the year, transect or both?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 And again, we will plot the fitted values using `fitted_values` and `ggplot2`. However, this time we want to visualize the main effect of `stem_dry_mass` without the random effects, as well as the full model with the random effects. We do this by using the `exclude` argument in `fitted_values`, the names of the terms to exclude can be found in the output of `mod_overview`.
@@ -506,9 +509,9 @@ maple_lmm_pred_main %>%
 ```
 
 ::: question-box
-**Question**: What is your immediate impression of the model fit from the plot? Does this visualization change your interpretation of the diagnostic plots from earlier?
+What is your immediate impression of the model fit from the plot? Does this visualization change your interpretation of the diagnostic plots from earlier?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 # Fitting Generalized Additive Models
@@ -596,9 +599,9 @@ wrap_plots(
 ```
 
 ::: question-box
-**Question**: How would you go about handling this type of data in your own research? Do you think the interpolation is a good approach; why or why not?
+How would you go about handling this type of data in your own research? Do you think the interpolation is a good approach; why or why not?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 We can then fit a GAM to the interpolated data using the `gam`/`bam` function in `mgcv`. Here we will use a smooth term for the animal age with a thin-plate spline basis and a factor smooth interaction term between the animal age and the year of recording, since we expect there may be some differences between years, but we are only interested in the general pattern. *Note: `k` was chosen using `gam.check`, while `family` was chosen using `appraise`.*
@@ -619,15 +622,15 @@ bison_gam <- bam(
 ```
 
 ::: question-box
-**Question**: What is the purpose of the `by` argument in the smooth term? How does it affect the model fit?
+What is the purpose of the `by` argument in the smooth term? How does it affect the model fit?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 ::: question-box
-**Question**: Have you used the `scat` (scaled t) family before? *(See `?family.mgcv` and `?scat` for further information)*
+Have you used the `scat` (scaled t) family before? *(See `?family.mgcv` and `?scat` for further information)*
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 As usual, first we should inspect the diagnostic plots using `appraise`.
@@ -640,9 +643,9 @@ As usual, first we should inspect the diagnostic plots using `appraise`.
 ```
 
 ::: question-box
-**Question**: Are there any issues with the model fit? How would you interpret the diagnostic plots from `appraise`?
+Are there any issues with the model fit? How would you interpret the diagnostic plots from `appraise`?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 We can quickly visualise the shape of the relationships of interest using the `draw` function from `gratia`. Here we are only really interested in the effect of the animal age, so we specify `select` to only include the smooth terms involving the animal age.
@@ -660,9 +663,9 @@ bison_gam %>%
 ```
 
 ::: question-box
-**Question**: What does "partial effect" mean in the context of the `draw` function? Can you easily extract the shape of the age-weight relationship and the differences between sexes from the plot?
+What does "partial effect" mean in the context of the `draw` function? Can you easily extract the shape of the age-weight relationship and the differences between sexes from the plot?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 For better control over the visualization, we can use the `fitted_values` function to generate predictions for a dataset with evenly spaced ages and both sexes. Again we use the `exclude` argument to generate predictions without the the random effects (in this case a random smooth term).
@@ -757,9 +760,9 @@ bison_inference %>%
 ```
 
 ::: question-box
-**Question**: Does this type of visualization help you understand the model fit better? What are the main differences to the `draw` function?
+Does this type of visualization help you understand the model fit better? What are the main differences to the `draw` function?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 As we can see, the model is able to capture the pattern extremely well, but as with all models, it is important to remember that extrapolation can be dangerous.
@@ -803,21 +806,21 @@ bird_data %>%
 As we can see the species have a common pattern of migrating north during summer and south during winter, but with slightly different timings.
 
 ::: question-box
-**Question**: How should we model the migration pattern? What is the response and predictor variable(s)?
+How should we model the migration pattern? What is the response and predictor variable(s)?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 ::: question-box
-**Question**: Which, if any, smooth term(s) is/are appropriate?
+Which, if any, smooth term(s) is/are appropriate?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 ::: question-box
-**Question**: How should we parametrize the model?
+How should we parametrize the model?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 For the first question, we can use `latitude` as the response variable and `week` as the predictor. We can then add `species` as a interacting random smooth term with `week` to model the differences in migration patterns between species.
@@ -851,7 +854,7 @@ gam_bird_mod <- gam(
 ```
 
 ::: question-box
-**Question**: What is the difference between the two models? What is the difference between `te` and `ti`? Which model do you think is more appropriate?
+What is the difference between the two models? What is the difference between `te` and `ti`? Which model do you think is more appropriate?
 :::
 
 Let us first compare the diagnostic plots:
@@ -872,9 +875,9 @@ list(
 ```
 
 ::: question-box
-**Question**: Which, if any, differences do you see between the two models? Which model do you now think is more appropriate?
+Which, if any, differences do you see between the two models? Which model do you now think is more appropriate?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 Next, we can inspect the results using the `mod_overview` function:
@@ -916,15 +919,15 @@ tab_gam_bird_mod %>%
 ```
 
 ::: question-box
-**Question**: What is the main difference between the outputs for the two models? Which model do you now think is more appropriate?
+What is the main difference between the outputs for the two models? Which model do you now think is more appropriate?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 ::: question-box
-**Question**: Which inferences can we draw from the model summary of `gam_bird_mod`?
+Which inferences can we draw from the model summary of `gam_bird_mod`?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 Another benefit of the second model is that we can easily visualize the main and interaction effects. Here we use the `data_slice` function from `gratia` to generate a prediction dataset with evenly spaced weeks and all species. We then use the `fitted_values` with the `exclude` term to predict both with and without the effect of `species`, i.e. with and without random effects.
@@ -993,15 +996,15 @@ predictions %>%
 ```
 
 ::: question-box
-**Question**: What do you think of the model fit? Does it capture the main and species-specific migration patterns well?
+What do you think of the model fit? Does it capture the main and species-specific migration patterns well?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 ::: question-box
-**Question**: Can you think of similar problems in your own research where GAMMs could be useful?
+Can you think of similar problems in your own research where GAMMs could be useful?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 # Optimizing for large datasets using `bam` and `gamm4`
@@ -1093,9 +1096,9 @@ cat(
 ```
 
 ::: question-box
-**Question**: What was your expectation for the speedup between `gam` and `bam`? How does the actual speedup compare to your expectation?
+What was your expectation for the speedup between `gam` and `bam`? How does the actual speedup compare to your expectation?
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 As you can see `bam` can be **much** faster tham `gam`, however does it come with a downside? The answer is most of the time 'no'. In this case the $r^2$ for the two models is almost identical: **`gam`= `r syn_gam_rsq`** & **`bam`= `r syn_bam_rsq`**. And if we look at their fits, they are also almost identical:
@@ -1180,15 +1183,15 @@ If you have made it this far, congratulations! You have now seen the core functi
 If you have extra time, try fitting a model to your own data using `mgcv` and `gratia`.
 
 ::: question-box
-**Question**: Would some of the extended families in `mgcv` be useful for your data? *See `?family.mgcv` for more information.*
+Would some of the extended families in `mgcv` be useful for your data? *See `?family.mgcv` for more information.*
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 ::: question-box
-**Question**: Which smooth terms would be appropriate for your data? *See `?smooth.terms` for more information.*
+Which smooth terms would be appropriate for your data? *See `?smooth.terms` for more information.*
 
-<p>Write your answer here!</p>
+Write your answer here!
 :::
 
 ```{r}
