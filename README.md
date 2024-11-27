@@ -26,6 +26,25 @@ Before starting, ensure you have `R` installed on your computer. You can downloa
 
 This tutorial is designed for use with **RStudio**, an integrated development environment (IDE) for `R`. Download **RStudio** [here](https://www.rstudio.com/products/rstudio/download/).
 
+<p align="center">
+  <img src="assets/tutorial_example.png">
+</p>
+
+### RStudio Settings
+There are a few options in RStudio that can make your life easier when working with RMarkdown files. You can find these settings under `Tools` → `Global Options` → `R Markdown`.
+
+Particularly, I recommend setting `Evaluate chunks in Directory` → `Project` and `Show output preview in` → `Viewer Pane`:
+
+<p align="center">
+  <img src="assets/rstudio_settings.png">
+</p>
+
+And then set the *`editor_option`* `chunk_output_type` to `console` (I have done this for you already in the tutorial):
+
+<p align="center">
+  <img src="assets/rmd_output.png">
+</p>
+
 #### Required `R` Packages
 
 To follow along with the tutorial, you will need the following `R` packages:
@@ -38,11 +57,15 @@ To follow along with the tutorial, you will need the following `R` packages:
 -   `rmdformats`
 -   `xfun`
 
-Install these packages by running the following command in **RGui** or a terminal with administrative privileges (ensure **RStudio** is closed):
+Install these packages by running the following command in **RGui** (make sure to select the correct version, if you have multiple versions of `R` installed) or a terminal with administrative privileges (ensure **RStudio** is closed):
 
 ``` r
 install.packages(c("mgcv", "tidyverse", "gratia", "magrittr", "kableExtra", "rmdformats", "xfun"))
 ```
+
+<p align="center">
+  <img src="assets/rgui.png" style="width: 60%;">
+</p>
 
 ### How to Use the Tutorial
 
@@ -50,7 +73,9 @@ install.packages(c("mgcv", "tidyverse", "gratia", "magrittr", "kableExtra", "rmd
 -   Download or clone this repository (or the fork).
 -   Open tutorial.Rmd in RStudio.
 
-![](download_zip.png)
+<p align="center">
+  <img src="assets/download_zip.png">
+</p>
 
 Work through the tutorial, filling in the code where indicated and answering questions along the way. Run the code blocks in RStudio to see the outputs, predictions, and diagnostics visualized in real-time.
 

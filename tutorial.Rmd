@@ -11,6 +11,8 @@ output:
     gallery: true
     code_folding: show
     out_width: 90%
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{css, echo=FALSE}
@@ -1174,7 +1176,9 @@ timing_plt <- timing_experiment %>%
 ggsave("timing_plt.png", timing_plt, height=5, width=8)
 ```
 
-![](timing_plt.png) That is not a carte blanche to use `bam` in all situations, or to say that it doesn't have downsides. For example, `bam` is not as flexible as `gam` and can't handle some of the more complex models that `gam` can. It is also not always as robust as `gam` and can sometimes fail to converge, especially when the data is not well-behaved or when used with some of the more complex families (such as `betar`) or smooth terms.
+![](assets/timing_plt.png)
+
+That is not a carte blanche to use `bam` in all situations, or to say that it doesn't have downsides. For example, `bam` is not as flexible as `gam` and can't handle some of the more complex models that `gam` can. It is also not always as robust as `gam` and can sometimes fail to converge, especially when the data is not well-behaved or when used with some of the more complex families (such as `betar`) or smooth terms.
 
 # Extra
 
