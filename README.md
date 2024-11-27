@@ -36,6 +36,9 @@ There are a few options in RStudio that can make your life easier when working w
 Particularly, I recommend setting `Evaluate chunks in Directory` → `Project` and `Show output preview in` → `Viewer Pane`:
 
 <p align="center">
+  <img src="assets/rstudio_global_options.png" style="width: 61.7%;">
+</p>
+<p align="center">
   <img src="assets/rstudio_settings.png">
 </p>
 
