@@ -15,41 +15,41 @@ editor_options:
   chunk_output_type: console
 ---
 
-```{css, echo=FALSE}
-div.question-box {
-    width: 75%;
-    margin: 10px auto;
-    padding: 5px;
-    border: 3px solid var(--code-block-background);
-    border-radius: 15px;
-    background: var(--success-color);
-    color: var(--text-color);
-    font-size: medium;
-    
-    p {
-      padding: 10px;
-      margin: 0;
-      font-style: italic;
-      color: color-mix(in hwb, var(--text-color), var(--page-background) 15%);
-    }
-    
-    p:first-child:before {
-      content: "Question: ";
-      font-style: normal;
-      font-weight: bold;
-    }
-    
-    p ~ p:before {
-      content: "Answer: ";
-      font-style: normal;
-      font-weight: bold;
-    }
-}
-
-.page-content h1 {
-  margin-top: 3rem;
-}
-```
+<style>
+  div.question-box {
+      width: 75%;
+      margin: 10px auto;
+      padding: 5px;
+      border: 3px solid var(--code-block-background);
+      border-radius: 15px;
+      background: var(--success-color);
+      color: var(--text-color);
+      font-size: medium;
+      
+      p {
+        padding: 10px;
+        margin: 0;
+        font-style: italic;
+        color: color-mix(in hwb, var(--text-color), var(--page-background) 15%);
+      }
+      
+      p:first-child:before {
+        content: "Question: ";
+        font-style: normal;
+        font-weight: bold;
+      }
+      
+      p ~ p:before {
+        content: "Answer: ";
+        font-style: normal;
+        font-weight: bold;
+      }
+  }
+  
+  .page-content h1 {
+    margin-top: 3rem;
+  }
+</style>
 
 ```{r}
 #| setup, include=FALSE
@@ -174,9 +174,7 @@ Smoothing functions available in `mgcv` include:
 
 When using `gam` or `bam` in `mgcv`, it is important to specify the `method` argument. The default is `method = "GCV.Cp"`, however unless you need to compare models with different parametric terms, it is recommended to use `method = "REML"` with `gam` and `method = "fREML"` for `bam`:
 
-```{r optim_method}
-#| eval: FALSE
-
+```{r optim_method, eval=F}
 # Incorrect
 gam(y ~ x, data = data)
 
@@ -188,9 +186,7 @@ gam(y ~ x, data = data, method = "REML")
 
 Sometimes we might want to specify multiple smoothing functions (bases) for a single term, an example later will come up later in this tutorial where we want a random cyclical smooth effect. `mgcv` doesn't contain a built-in random cyclical smooth basis, however it does contain a random smooth basis and a cyclic smooth basis, these can then be combined by specifying both in the `bs` argument to `te()`:
 
-```{r multiple_smooth}
-#| eval: FALSE
-
+```{r multiple_smooth, eval=F}
 gam(y ~ te(f, x, bs=c("fs", "cc")), data = data, method = "REML")
 ```
 
@@ -198,9 +194,7 @@ gam(y ~ te(f, x, bs=c("fs", "cc")), data = data, method = "REML")
 
 When specifying smooth interactions in `mgcv`, often interaction *can* be specified simply by listing multiple terms inside a single `s()` term. However, this can lead to issues with model identifiability and interpretation. It is often better to separate the main and interaction effects using the `ti()`. The `ti()` function essentially functions as the `:` operator for standard R formulas, but for smooth terms (including random effects):
 
-```{r smooth_interactions}
-#| eval: FALSE
-
+```{r smooth_interactions, eval=F}
 # Standard
 gam(y ~ s(x, y), data = data, method = "REML")
 
@@ -1024,7 +1018,7 @@ plot_smooth <- function(sfun, z, s, zlim) {
     ggplot(aes(z, s)) +
     geom_function(fun = sfun, xlim = zlim, color = "red", linewidth = 1) +
     geom_point(size = 2) +
-    labs(title = latex2exp::TeX("Control points and curve for one instance of $f_s$"))
+    labs(title = expression("Control points and curve for one instance of " * f[s]))
   
   print(plt)
 }
