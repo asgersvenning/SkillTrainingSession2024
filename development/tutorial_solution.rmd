@@ -968,7 +968,7 @@ plot_smooth <- function(sfun, z, s, zlim) {
     ggplot(aes(z, s)) +
     geom_function(fun = sfun, xlim = zlim, color = "red", linewidth = 1) +
     geom_point(size = 2) +
-    labs(title = latex2exp::TeX("Control points and curve for one instance of $f_s$"))
+    labs(title = expression("Control points and curve for one instance of " * f[s]))
   
   print(plt)
 }
