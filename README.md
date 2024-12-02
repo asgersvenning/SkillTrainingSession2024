@@ -55,13 +55,14 @@ To follow along with the tutorial, you will need the following `R` packages:
 -   `gratia`
 -   `magrittr`
 -   `kableExtra`
+-   `lterdatasampler`
 -   `rmdformats`
 -   `xfun`
 
 Install these packages by running the following command in **RGui** (make sure to select the correct version, if you have multiple versions of `R` installed) or a terminal with administrative privileges (ensure **RStudio** is closed):
 
 ``` r
-install.packages(c("mgcv", "tidyverse", "gratia", "magrittr", "kableExtra", "rmdformats", "xfun"))
+install.packages(c("mgcv", "tidyverse", "gratia", "magrittr", "kableExtra", "lterdatasampler", "rmdformats", "xfun"))
 ```
 
 <p align="center">
